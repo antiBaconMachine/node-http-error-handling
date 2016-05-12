@@ -7,17 +7,10 @@ const CONTENT = 'content';
 
 const defaultHandler = (req, res) => res.end(CONTENT);
 
-function createServers(handler1, handler2) {
-    handler1 = handler1 || defaultHandler;
-    handler2 = handler2 || defaultHandler;
-    
-    const server1 = http.createServer((req, res) => handler1(req, res));
-    server1.listen(1111);
-
-    const server2 = http.createServer((req, res) => handler2(req, res));
-    server2.listen(2222);
-    
-    return end => Promise.all([new Promise(res => server1.close(res)), new Promise(res => server2.close(res))]).then(() => end());
+function createServers() {
+    const handlers = [].slice.apply(arguments);
+    const servers = handlers.slice().map((v, i) => http.createServer(handlers[i]).listen(+(new Array(4).fill(i + 1).join(''))));    
+    return end => Promise.all(servers.map(server => new Promise(r => server.close(r)))).then(() => end());
 }
 
 test('ping', t => {
@@ -35,7 +28,7 @@ test('ping', t => {
 });
 
 test('proxy', t => {
-    const close = createServers((req, res) => http.get('http://localhost:2222', pres => pres.pipe(res)));
+    const close = createServers((req, res) => http.get('http://localhost:2222', pres => pres.pipe(res)), defaultHandler);
     http.get('http://localhost:1111', res => {
         res.on('data', d => {
             t.equals(d.toString('utf8'), CONTENT);
