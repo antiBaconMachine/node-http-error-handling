@@ -7,9 +7,8 @@ const CONTENT = 'content';
 
 const defaultHandler = (req, res) => res.end(CONTENT);
 
-function createServers() {
-    const handlers = [].slice.apply(arguments);
-    const servers = handlers.slice().map((v, i) => http.createServer(handlers[i]).listen(+(new Array(4).fill(i + 1).join(''))));    
+function createServers(...handlers) {
+    const servers = handlers.slice().map((v, i) => http.createServer(handlers[i]).listen(Array(4).fill(i + 1).join('')));    
     return end => Promise.all(servers.map(server => new Promise(r => server.close(r)))).then(() => end());
 }
 
